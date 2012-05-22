@@ -315,4 +315,98 @@ class ImporterBehaviorTest extends CakeTestCase {
 		return $data;
 	}
 
+
+    /**
+     * @dataProvider csvDataProviderWithConvertColumns
+     *
+     */
+    public function testImportCsvFromFileWithConvertColumns($data, $expected) {
+
+        $csvFile = $this->_makeDummyCsv($data);
+
+        $options = array(
+            'csvEncoding' => 'UTF-8',
+            'hasHeader' => false,
+            'delimiter' => ',',
+            'enclosure' => '"',
+            'convertColumns' => array(
+                '1' => array(
+                    'Japan' => 1,
+                    'Antarctica' => 2,
+                ),
+            ),
+        );
+
+        $result = $this->Importer->importCsvFromFile($csvFile, $options);
+        $this->assertTrue($result);
+
+        $results = $this->Importer->find('all');
+
+        for($i = 0; $i < count($results); ++$i) {
+            $name = $results[$i]['Importer']['name'];
+            $country = $results[$i]['Importer']['country'];
+
+            $this->assertSame($expected[$i]['name'], $name);
+            $this->assertSame($expected[$i]['country'], $country);
+        }
+    }
+
+    /**
+     * dataProvider for testImportCsvFromFileWithConvertColumns
+     *
+     */
+    public function csvDataProviderWithConvertColumns() {
+        $inputs[] = array(
+            '"Oyama","Japan"',
+            '"Suzuki","Antarctica"',
+            '"Tanaka","Japan"',
+        );
+        $expected[] = array(
+            array(
+                'name' => 'Oyama',
+                'country' => '1',
+            ),
+            array(
+                'name' => 'Suzuki',
+                'country' => '2',
+            ),
+            array(
+                'name' => 'Tanaka',
+                'country' => '1',
+            ),
+        );
+
+        $inputs[] = array(
+            '"NAME","COUNTRY"', // HEADER LINE
+            '"Oyama","Japan"',
+            '"Suzuki","Antarctica"',
+            '"Tanaka","Japan"',
+        );
+        $expected[] = array(
+            array(
+                'name' => 'NAME',
+                'country' => 'COUNTRY',
+            ),
+            array(
+                'name' => 'Oyama',
+                'country' => '1',
+            ),
+            array(
+                'name' => 'Suzuki',
+                'country' => '2',
+            ),
+            array(
+                'name' => 'Tanaka',
+                'country' => '1,
+            ),
+        );
+
+        $data = array();
+        for($i = 0; $i < count($inputs); ++$i) {
+            $data[] = array($inputs[$i], $expected[$i]);
+        }
+
+        return $data;
+    }
+
 }

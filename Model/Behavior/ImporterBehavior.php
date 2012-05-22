@@ -34,6 +34,8 @@ class ImporterBehavior extends ModelBehavior {
                           'forceImport' => false,
                           'saveMethod' => false,
                           'allowExtension' => false,
+                          'convertColumns' => array(),
+                          'convertFailedData' => false,
                           );
         $this->options = array_merge($defaults, $options);
 
@@ -198,7 +200,7 @@ class ImporterBehavior extends ModelBehavior {
             $handle = fopen($filePath, "r");
             while (($result = $this->_parseCsvLine($handle)) !== false) {
                 mb_convert_variables(Configure::read('App.encoding'), $this->options['csvEncoding'], $result);
-                $csvData[] = $result;
+                $csvData[] = $this->__convertColumns($result);
             }
             if ($this->options['hasHeader']) {
                 for ($i = 0; $i < $this->options['skipHeaderCount']; ++$i) {
@@ -254,4 +256,21 @@ class ImporterBehavior extends ModelBehavior {
     public function getImportedCount() {
         return $this->importedCount;
     }
+
+    private function __convertColumns($csvData) {
+        if (array_key_exists('convertColumns', $this->options)) {
+            foreach ($this->options['convertColumns'] as $columnNumber => $convertData) {
+                if (array_key_exists($csvData['data'][$columnNumber], $convertData)) {
+                    $newData = $convertData[$csvData['data'][$columnNumber]];
+                    $csvData['data'][$columnNumber] = $newData;
+                } else {
+                    if ($this->options['convertFailedData'] !== false) {
+                        $csvData['data'][$columnNumber] = $this->options['convertFailedData'];
+                    }
+                }
+            }
+        }
+        return $csvData;
+    }
+
 }
