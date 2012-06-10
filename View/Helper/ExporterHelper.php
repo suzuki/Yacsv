@@ -43,7 +43,7 @@ class ExporterHelper extends AppHelper {
                 $data = preg_replace('/\"/', '""', $data);
                 $data = '"' . $data . '"';
             }
-            $ret[] = mb_convert_encoding($data, $this->options['csvEncoding'], 'UTF-8');		
+            $ret[] = mb_convert_encoding($data, $this->options['csvEncoding'], 'UTF-8');
 		}
 		return $ret;
 	}
@@ -65,7 +65,13 @@ class ExporterHelper extends AppHelper {
 			$dataArray = array();
 
 			foreach ($this->options['fields'] as $field) {
-				$dataArray[] = $line[0][$field];
+				if (preg_match('/^([^\.]+)\.([^\.]+)$/',$field, $match)) {
+					$model = $match[1];
+					$field = $match[2];
+					$dataArray[] = $line[$model][$field];
+				} else {
+					$dataArray[] = $line[0][$field];
+				}
 			}
 
 			$tmp = $this->__convertCsvLine($dataArray);
@@ -82,7 +88,7 @@ class ExporterHelper extends AppHelper {
 		return $this->__temporaryFile;
 	}
 
-	public function csv($lines, $options = array()) {
+	public function csv(&$lines, $options = array()) {
         $defaults = array(
 			//'csvEncoding' => 'SJIS-win',
 			'csvEncoding' => 'SJIS-win',
